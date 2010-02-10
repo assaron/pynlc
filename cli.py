@@ -71,6 +71,28 @@ if __name__ == "__main__":
             try:
                 if cmd == 'exit':
                     break
+                elif cmd == 'help':
+                    print """
+    This is a simple NetLand client.
+    Possible commands are:
+
+        cat <id1> <id2> ... - print messages with id1, id2, ...,
+            if idN = '*' print all current message's comments
+
+        cd <path> - tries to change the current node to path
+
+        help - prints this message
+
+        exit - exits
+
+        ls - lists current message's comments' ids
+
+        post - opens $EDITOR to compose a comment to the current node,
+            leave empty to canel
+
+        update - updates the messages tree
+
+"""
                 elif cmd == 'ls':
                     for msg in stack[-1].replies():
                         print msg.id()
