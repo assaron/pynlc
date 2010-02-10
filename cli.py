@@ -54,7 +54,7 @@ if __name__ == "__main__":
         auth = Authentificator(core.send)
         core.set_handler('d', board.handle_update)
         core.set_handler('R', auth.handle_request)
-        core.set_handler('bfsF', print_function)
+        core.set_handler('bfs', print_function)
         core.start()
 
         board.update()
