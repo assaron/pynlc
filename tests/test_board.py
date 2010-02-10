@@ -56,12 +56,12 @@ def test_board():
                  0, 1, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 2, 0, 0),
                 (3, 0, 1, 0, "255.255.255.255", "255", "255", u"бугога",
                  0, 1, 0, "00-00-00-00-00-00", 0, 0, 0, 0, 5, 0, 0),
-                (4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>channel<br>#2",
+                (4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>\nchannel<br>\n#2",
                  0, 2, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 3, 0, 0), ]
 
-    update_message = "dmagic\r" + "\t\r".join(
+    update_message = "dmagic\r" + ("\t\r".join(
             ["\t".join([unicode(field) for field in message])
-                for message in messages] + [''])
+                for message in messages] + [''])).replace("\n","\x01")
 
     board.handle_update(update_message.encode("cp1251"))
 

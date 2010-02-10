@@ -53,6 +53,8 @@ class Message:
             else:
                 self._properties[key] = int(value)
 
+        self._properties["body"] = self._properties["body"].replace("\x01", "\n")
+
         # creating readonly properties like 
         # def id()
         #     return self._properties["id"]

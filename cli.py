@@ -42,7 +42,7 @@ def print_message(msg):
     print "Date:", date.ctime()
     print "ID:", msg.id()
     print "---------------------"
-    print msg.body().replace('\r\n','\n').replace('\r','\n')
+    print msg.body()
     print "====================="
     print ""
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         ls - lists current message's comments' ids
 
         post - opens $EDITOR to compose a comment to the current node,
-            leave empty to canel
+            leave empty to cancel
 
         update - updates the messages tree
 

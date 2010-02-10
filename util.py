@@ -53,7 +53,6 @@ def ping(server):
     return res
 
 def print_function(string):
-    string = string.replace("\r\n", "\n")
     string = string.replace("\r", "\n")
     string = string.decode("cp1251")
     print string
