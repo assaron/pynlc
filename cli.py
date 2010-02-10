@@ -22,6 +22,7 @@ import sys
 import threading
 import time
 import os
+import traceback
 from tempfile import mkstemp
 from datetime import timedelta
 from subprocess import call
@@ -69,9 +70,7 @@ if __name__ == "__main__":
                 continue
             cmd = args[0]
             try:
-                if cmd == 'exit':
-                    break
-                elif cmd == 'help':
+                if cmd == 'help':
                     print """
     This is a simple NetLand client.
     Possible commands are:
@@ -93,6 +92,8 @@ if __name__ == "__main__":
         update - updates the messages tree
 
 """
+                elif cmd == 'exit':
+                    break
                 elif cmd == 'ls':
                     for msg in stack[-1].replies():
                         print msg.id()
@@ -110,7 +111,7 @@ if __name__ == "__main__":
                     for node in arg.split('/'):
                         if node[0] == '#':
                             channel_id = int(node[1:])
-                            channel = board.get_channel(channeld_id)
+                            channel = board.get_channel(channel_id)
                             if channel:
                                 stack = [channel]
                         elif node == "..":
@@ -142,7 +143,8 @@ if __name__ == "__main__":
                 elif cmd == 'update':
                     board.update()
             except:
-                print "Unexpected error:", sys.exc_info()[0]
+                print "Unhandled exception:"
+                traceback.print_exc()
 
 
     finally:
