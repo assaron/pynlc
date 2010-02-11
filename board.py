@@ -23,13 +23,9 @@ from datetime import date, timedelta
 from util import nsplit
 import config
 
-# :TODO: Message and Channel classes are similar. May be it's better
-#        to make a common base class.
-
 class Node:
     """
-        Class with read-only integers and strings properties and
-        replies.
+        Class with read-only properties (integers and strings) and replies.
     """
 
     def __init__(self, input_string, properties_names, text_properties):
@@ -145,7 +141,7 @@ class Board:
         """
         reply = reply.replace("\n","\r").encode("cp1251")
         nick = nick.encode("cp1251")
-        self._sender("Dreply\t%d\t%s\t%s\t\t" % (message_id, nick, reply))
+        self._sender("Dreply\t%d\t%s\t%s\t\t\n" % (message_id, nick, reply))
 
     def new(self, channel_id, message, nick, actuality_period=50):
         """
@@ -155,8 +151,30 @@ class Board:
                            config.EPOCH_START_DAYS).days
         message = message.replace("\n","\r").encode("cp1251");
         nick = nick.encode("cp1251")
-        self._sender("Dadd\t%d\t%d\t%s\t%s\n" % 
+        self._sender("Dadd\t%d\t%d\t%s\t%s\n" %
                         (channel_id, expiration_date, nick, message))
+
+    def delete_message(self, message_id):
+        """
+            Deletes the message with comments.
+        """
+        # :TODO: change nick to something else and see what happens
+        self._sender("Ddel\t%d\t%s\t\t\n" %
+                (message_id, self._messages[message_id].nick().encode("cp1251")))
+
+    def delete_comments(self, message_id):
+        """
+            Deletes comments of the message.
+        """
+        self._sender("Ddel\t%d\t%s\tReplyOnly\t\n" %
+                (message_id, self._messages[message_id].nick().encode("cp1251")))
+
+
+    def up_message(self, message_id):
+        """
+            Moves message to the top.
+        """
+        self._sender("Dup\t%d\n" % message_id)
 
     def update(self):
         """

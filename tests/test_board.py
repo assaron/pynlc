@@ -54,7 +54,7 @@ def test_board():
                  0, 1, 0, "ff-ff-ff-ff-ff-ff", 0, 0, 0, 0, 1, 0, 0),
                 (2, 0, 1, 0, "127.0.0.2", "host2", "nick2", u"Привет и тебе",
                  0, 1, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 2, 0, 0),
-                (3, 0, 1, 0, "255.255.255.255", "255", "255", u"бугога",
+                (3, 0, 1, 0, "255.255.255.255", "255", u"ник255", u"бугога",
                  0, 1, 0, "00-00-00-00-00-00", 0, 0, 0, 0, 5, 0, 0),
                 (4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>\nchannel<br>\n#2",
                  0, 2, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 3, 0, 0), ]
@@ -80,6 +80,17 @@ def test_board():
 
     eq_(None, board.get_message(10))
 
+    simple_server = SimpleServer()
+    board.set_sender(simple_server.send)
+    message_id = 3
+    board.delete_message(message_id)
+    eq_("Ddel\t%d\t%s\t\t\n" % (message_id, messages[message_id - 1][6]),
+        simple_server.recieve().decode('cp1251'))
+
+    board.delete_comments(message_id)
+    eq_("Ddel\t%d\t%s\tReplyOnly\t\n" % (message_id, messages[message_id - 1][6]),
+        simple_server.recieve().decode('cp1251'))
+
 
 def test_board_reply():
     simple_server = SimpleServer()
@@ -89,7 +100,7 @@ def test_board_reply():
     parent_id = 4
     board.reply(parent_id, reply, nick)
 
-    eq_("Dreply\t%d\t%s\t%s\t\t" % (parent_id, nick, reply),
+    eq_("Dreply\t%d\t%s\t%s\t\t\n" % (parent_id, nick, reply),
         simple_server.recieve().decode('cp1251'))
 
 def test_board_new():
@@ -113,3 +124,10 @@ def test_board_new():
     eq_("Dadd\t%d\t%d\t%s\t%s\n" % (channel_id, expiration_date, nick, message),
         simple_server.recieve().decode('cp1251'))
 
+def test_board_up_message():
+    simple_server = SimpleServer()
+    board = Board(simple_server.send)
+    message_id = 4
+    board.up_message(message_id)
+
+    eq_("Dup\t%d\n" % message_id, simple_server.recieve().decode('cp1251'))
