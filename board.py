@@ -25,40 +25,26 @@ import config
 
 # :TODO: Message and Channel classes are similar. May be it's better
 #        to make a common base class.
-class Message:
-    """
-        Message.
 
-        zeroX     - fields that seems to be always zero
-        thread_id - something like thread id
-        time_id   - consecutive ID: almost all the time 
-                    (post_time1 > post_time2) == (time_id1 > time_id2)
-        deleteX   - seems to be equal to one after deleting
+class Node:
     """
-    PROPERTIES_NAMES = ("id", "unknown1", "parent_id", "delete1",
-            "IP", "hostname", "nick", "body", "edit_time", "channel_id",
-            "unknown2", "mac", "zero1", "zero2", "zero3", "zero4", 
-            "time_id", "delete2", "post_time" )
-    TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
+        Class with read-only integers and strings properties and
+        replies.
+    """
 
-    def __init__(self, message_update):
-        """
-            Parses message_update.
-        """
-        properties = message_update.split('\t')[:-1]
-        self._properties = dict(zip(Message.PROPERTIES_NAMES, properties))
+    def __init__(self, input_string, properties_names, text_properties):
+        properties = input_string.split('\t')[:-1]
+        self._properties = dict(zip(properties_names, properties))
         for key, value in self._properties.iteritems():
-            if key in Message.TEXT_PROPERTIES:
+            if key in text_properties:
                 self._properties[key] = value.decode("cp1251")
             else:
                 self._properties[key] = int(value)
 
-        self._properties["body"] = self._properties["body"].replace("\x01", "\n")
-
         # creating readonly properties like 
         # def id()
         #     return self._properties["id"]
-        for name in Message.PROPERTIES_NAMES:
+        for name in properties_names:
             setattr(self, name, 
                     partial(self._properties.__getitem__, name))
         self._replies = []
@@ -76,7 +62,35 @@ class Message:
         # :TODO: something like iterreplies will be good.
         return tuple(self._replies)
 
-class Channel:
+
+
+class Message(Node):
+    """
+        Message.
+
+        zeroX     - fields that seems to be always zero
+        thread_id - something like thread id
+        time_id   - consecutive ID: almost all the time 
+                    (post_time1 > post_time2) == (time_id1 > time_id2)
+        deleteX   - seems to be equal to one after deleting
+    """
+    PROPERTIES_NAMES = ("id", "unknown1", "parent_id", "delete1",
+            "IP", "hostname", "nick", "body", "edit_time", "channel_id",
+            "unknown2", "mac", "zero1", "zero2", "zero3", "zero4",
+            "time_id", "delete2", "post_time" )
+    TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
+
+    def __init__(self, messages_update):
+        """
+            Parses message_update.
+        """
+        Node.__init__(self, messages_update,
+                      Message.PROPERTIES_NAMES,
+                      Message.TEXT_PROPERTIES)
+        self._properties["body"] = self._properties["body"].replace("\x01", "\n")
+
+
+class Channel(Node):
     """
         Channel.
     """
@@ -84,35 +98,9 @@ class Channel:
     TEXT_PROPERTIES = set(["name", "description"])
 
     def __init__(self, channel_update):
-        properties = channel_update.split('\t')[:-1]
-        self._properties = dict(zip(Channel.PROPERTIES_NAMES, properties))
-        for key, value in self._properties.iteritems():
-            if key in Channel.TEXT_PROPERTIES:
-                self._properties[key] = value.decode("cp1251")
-            else:
-                self._properties[key] = int(value)
-        self._replies = []
-
-    def add_reply(self, reply):
-        """
-            Appends the reply to the replies' list.
-        """
-        self._replies.append(reply)
-
-    def replies(self):
-        """
-            Returns list of replies.
-        """
-        return tuple(self._replies)
-
-    def id(self):
-        return self._properties["id"]
-
-    def name(self):
-        return self._properties["name"]
-
-    def description(self):
-        return self._properties["description"]
+        Node.__init__(self, channel_update,
+                      Channel.PROPERTIES_NAMES,
+                      Channel.TEXT_PROPERTIES)
 
 class Board:
     """

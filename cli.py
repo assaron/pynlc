@@ -76,10 +76,14 @@ if __name__ == "__main__":
     Possible commands are:
 
         cat <id1> <id2> ... - print messages with id1, id2, ...,
-            idN are integers
+            idN are integers or '*'
             if idN = '*' print all current message's comments
 
         cd <path> - tries to change the current node to path
+            examples of path:
+                ../1234
+                1234/1233
+                #2/3123/../352
 
         help - prints this message
 
