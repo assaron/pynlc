@@ -68,12 +68,13 @@ class Message(Node):
         thread_id - something like thread id
         time_id   - consecutive ID: almost all the time 
                     (post_time1 > post_time2) == (time_id1 > time_id2)
-        deleteX   - seems to be equal to one after deleting
+        delete_   - seems to be equal to one after deleting
+        deleted   - deletes message from original client (oppose to delete_)
     """
-    PROPERTIES_NAMES = ("id", "unknown1", "parent_id", "delete1",
+    PROPERTIES_NAMES = ("id", "unknown1", "parent_id", "delete_",
             "IP", "hostname", "nick", "body", "edit_time", "channel_id",
             "unknown2", "mac", "zero1", "zero2", "zero3", "zero4",
-            "time_id", "delete2", "post_time" )
+            "time_id", "deleted", "post_time" )
     TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
 
     def __init__(self, messages_update):
@@ -180,8 +181,9 @@ class Board:
         """
             Sends request for update.
         """
-        # :FIXME: official cliend sends "Dlast\t%d\t-8=-1,\n"
-        self._sender("Dlast\t%d\n" % self._last_time_id)
+        # "-8=-1," means that we're requesting from all (-8) channels
+        # as many messages as server wants (-1)
+        self._sender("Dlast\t%d\t-8=-1,\n" % self._last_time_id)
 
     def channels_list(self):
         """
