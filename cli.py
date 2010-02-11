@@ -94,6 +94,11 @@ if __name__ == "__main__":
         post - opens $EDITOR to compose a comment to the current node,
             leave empty to cancel
 
+        rm [-c] <id1> <id2> - removes messages and their comments
+            with -c option removes only comments
+
+        up - up message to the top
+
         update - updates the messages tree
 
 """
@@ -106,7 +111,7 @@ if __name__ == "__main__":
                     for arg in args[1:]:
                         if arg == '*':
                             map(print_message, stack[-1].replies())
-                        else:
+                        elif arg.isdigit():
                             message_id = int(arg)
                             message = board.get_message(message_id)
                             if message:
@@ -147,6 +152,20 @@ if __name__ == "__main__":
                         print "posted"
                 elif cmd == 'update':
                     board.update()
+                elif cmd == 'rm':
+                    if '-c' in args:
+                        deleter = board.delete_comments
+                    else:
+                        deleter = board.delete_message
+                    for arg in args[1:]:
+                        if arg.isdigit():
+                            deleter(int(arg))
+                elif cmd == 'up':
+                    for arg in args[1:]:
+                        if arg.isdigit():
+                            board.up_message(int(arg))
+
+
             except:
                 print "Unhandled exception:"
                 traceback.print_exc()
