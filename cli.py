@@ -27,11 +27,13 @@ from tempfile import mkstemp
 from datetime import timedelta
 from subprocess import call
 from getpass import getuser
+from guppy import hpy
 
 from core import ClientCore
 from board import *
 from auth import Authentificator
 from util import print_function
+
 import config
 
 def print_message(msg):
@@ -49,6 +51,7 @@ def print_message(msg):
 if __name__ == "__main__":
     core = None
     nick = getuser()
+    profiler = hpy()
     try:
         core = ClientCore(config.SERVER)
         board = Board(core.send)
@@ -90,6 +93,8 @@ if __name__ == "__main__":
         exit - exits
 
         ls - lists current message's comments' ids
+
+        memusage - some info about memory usage
 
         post - opens $EDITOR to compose a comment to the current node,
             leave empty to cancel
@@ -164,6 +169,8 @@ if __name__ == "__main__":
                     for arg in args[1:]:
                         if arg.isdigit():
                             board.up_message(int(arg))
+                elif cmd == 'memusage':
+                    print profiler.heap()
 
 
             except:

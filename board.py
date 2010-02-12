@@ -17,50 +17,65 @@
 # You should have received a copy of the GNU General Public License
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
 from datetime import date, timedelta
 
 from util import nsplit
 import config
 
-class Node:
+def get_get_property_from_dict_function(property_name, dict_name="_properties"):
+    def _get_property_from_dict(self):
+        return getattr(self, dict_name)[property_name]
+    return _get_property_from_dict
+
+
+def Node(properties_names, text_properties):
     """
-        Class with read-only properties (integers and strings) and replies.
+        Generates a class with given properties.
     """
+    class _Node:
+        def __init__(self, input_string):
+            properties = input_string.split('\t')[:-1]
+            self._properties = dict(zip(properties_names, properties))
+            for key, value in self._properties.iteritems():
+                if key in text_properties:
+                    self._properties[key] = value.decode("cp1251")
+                else:
+                    self._properties[key] = int(value)
 
-    def __init__(self, input_string, properties_names, text_properties):
-        properties = input_string.split('\t')[:-1]
-        self._properties = dict(zip(properties_names, properties))
-        for key, value in self._properties.iteritems():
-            if key in text_properties:
-                self._properties[key] = value.decode("cp1251")
-            else:
-                self._properties[key] = int(value)
+            self._replies = []
 
-        # creating readonly properties like 
-        # def id()
-        #     return self._properties["id"]
-        for name in properties_names:
-            setattr(self, name, 
-                    partial(self._properties.__getitem__, name))
-        self._replies = []
+        def add_reply(self, reply):
+            """
+                Appends the reply to the replies' list.
+            """
+            self._replies.append(reply)
 
-    def add_reply(self, reply):
-        """
-            Appends the reply to the replies' list.
-        """
-        self._replies.append(reply)
-
-    def replies(self):
-        """
-            Returns list of replies.
-        """
-        # :TODO: something like iterreplies will be good.
-        return tuple(self._replies)
+        def replies(self):
+            """
+                Returns list of replies.
+            """
+            # :TODO: something like iterreplies will be good.
+            return tuple(self._replies)
 
 
+    # creating readonly properties like 
+    # def id()
+    #     return self._properties["id"]
+    for name in properties_names:
+        setattr(_Node, name, get_get_property_from_dict_function(name))
 
-class Message(Node):
+    return _Node
+
+MESSAGE_PROPERTIES = ("id", "unknown1", "parent_id", "delete_",
+        "IP", "hostname", "nick", "body", "edit_time", "channel_id",
+        "unknown2", "mac", "zero1", "zero2", "zero3", "zero4",
+        "time_id", "deleted", "post_time" )
+MESSAGE_TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
+
+# Message base class
+MessageBase = Node(MESSAGE_PROPERTIES, MESSAGE_TEXT_PROPERTIES)
+
+class Message(MessageBase):
     """
         Message.
 
@@ -71,33 +86,26 @@ class Message(Node):
         delete_   - seems to be equal to one after deleting
         deleted   - deletes message from original client (oppose to delete_)
     """
-    PROPERTIES_NAMES = ("id", "unknown1", "parent_id", "delete_",
-            "IP", "hostname", "nick", "body", "edit_time", "channel_id",
-            "unknown2", "mac", "zero1", "zero2", "zero3", "zero4",
-            "time_id", "deleted", "post_time" )
-    TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
 
     def __init__(self, messages_update):
         """
             Parses message_update.
         """
-        Node.__init__(self, messages_update,
-                      Message.PROPERTIES_NAMES,
-                      Message.TEXT_PROPERTIES)
+        MessageBase.__init__(self, messages_update)
         self._properties["body"] = self._properties["body"].replace("\x01", "\n")
 
+CHANNEL_PROPERTIES = ("id", "name", "description")
+CHANNEL_TEXT_PROPERTIES = set(["name", "description"])
 
-class Channel(Node):
+# Channel base class
+ChannelBase = Node(CHANNEL_PROPERTIES, CHANNEL_TEXT_PROPERTIES)
+
+class Channel(ChannelBase):
     """
         Channel.
     """
-    PROPERTIES_NAMES = ("id", "name", "description")
-    TEXT_PROPERTIES = set(["name", "description"])
-
     def __init__(self, channel_update):
-        Node.__init__(self, channel_update,
-                      Channel.PROPERTIES_NAMES,
-                      Channel.TEXT_PROPERTIES)
+        ChannelBase.__init__(self, channel_update)
 
 class Board:
     """

@@ -19,21 +19,6 @@
 
 from functools import partial
 
-def _get_property_from_dict(self, name, dict_name):
-    print name
-    print dict_name
-    return getattr(self, dict_name)[name]
-
-def add_properties_from_dict(clazz, properties_names, dict_name="_properties"):
-    """
-        Should add methods like:
-        def id():
-            return self._properties["id"]
-        Doesn't work now!
-    """
-    for name in clazz.PROPERTIES_NAMES:
-        setattr(clazz, name, partial(_get_property_from_dict, name=name, dict_name=dict_name))
-
 def ping(server):
     """
         Spectial ping for netland server.
