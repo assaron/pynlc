@@ -43,7 +43,7 @@ def test_board():
     board.handle_update(update_message.encode("cp1251"))
     board_channels = [
             tuple([getattr(channel,field)()
-                for field in CHANNEL_PROPERTIES])
+                for field, __ in CHANNEL_PROPERTIES])
                     for channel in board.channels_list()]
     eq_(channels, board_channels)
     eq_(None, board.get_channel(10))
@@ -76,7 +76,7 @@ def test_board():
     for message in messages:
         board_message = board.get_message(message[0])
         eq_(message, tuple([getattr(board_message, field)()
-                            for field in MESSAGE_PROPERTIES]))
+                            for field, __ in MESSAGE_PROPERTIES]))
 
     eq_(None, board.get_message(10))
 

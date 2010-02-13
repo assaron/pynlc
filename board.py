@@ -20,60 +20,21 @@
 from datetime import date, timedelta
 
 from util import nsplit
+from node import *
 import config
 
-def get_get_property_from_dict_function(property_name, dict_name="_properties"):
-    def _get_property_from_dict(self):
-        return getattr(self, dict_name)[property_name]
-    return _get_property_from_dict
-
-
-def Node(properties_names, text_properties):
-    """
-        Generates a class with given properties.
-    """
-    class _Node:
-        def __init__(self, input_string):
-            properties = input_string.split('\t')[:-1]
-            self._properties = dict(zip(properties_names, properties))
-            for key, value in self._properties.iteritems():
-                if key in text_properties:
-                    self._properties[key] = value.decode("cp1251")
-                else:
-                    self._properties[key] = int(value)
-
-            self._replies = []
-
-        def add_reply(self, reply):
-            """
-                Appends the reply to the replies' list.
-            """
-            self._replies.append(reply)
-
-        def replies(self):
-            """
-                Returns list of replies.
-            """
-            # :TODO: something like iterreplies will be good.
-            return tuple(self._replies)
-
-
-    # creating readonly properties like 
-    # def id()
-    #     return self._properties["id"]
-    for name in properties_names:
-        setattr(_Node, name, get_get_property_from_dict_function(name))
-
-    return _Node
-
-MESSAGE_PROPERTIES = ("id", "unknown1", "parent_id", "delete_",
-        "IP", "hostname", "nick", "body", "edit_time", "channel_id",
-        "unknown2", "mac", "zero1", "zero2", "zero3", "zero4",
-        "time_id", "deleted", "post_time" )
-MESSAGE_TEXT_PROPERTIES = set(["IP", "hostname", "nick", "body", "mac"])
+MESSAGE_PROPERTIES = (
+    ("id", int_decoder), ("unknown1", int_decoder), ("parent_id", int_decoder),
+    ("delete_", int_decoder), ("IP", str_decoder), ("hostname", unicode_decoder),
+    ("nick", unicode_decoder), ("body", unicode_decoder),
+    ("edit_time", int_decoder), ("channel_id", int_decoder),
+    ("unknown2", int_decoder), ("mac", str_decoder), ("zero1", int_decoder),
+    ("zero2", int_decoder), ("zero3", int_decoder), ("zero4", int_decoder),
+    ("time_id", int_decoder), ("deleted", int_decoder), ("post_time", int_decoder)
+    )
 
 # Message base class
-MessageBase = Node(MESSAGE_PROPERTIES, MESSAGE_TEXT_PROPERTIES)
+MessageBase = Node(MESSAGE_PROPERTIES)
 
 class Message(MessageBase):
     """
@@ -94,11 +55,12 @@ class Message(MessageBase):
         MessageBase.__init__(self, messages_update)
         self._properties["body"] = self._properties["body"].replace("\x01", "\n")
 
-CHANNEL_PROPERTIES = ("id", "name", "description")
-CHANNEL_TEXT_PROPERTIES = set(["name", "description"])
+CHANNEL_PROPERTIES = (("id", int_decoder),
+                      ("name", unicode_decoder),
+                      ("description", unicode_decoder))
 
 # Channel base class
-ChannelBase = Node(CHANNEL_PROPERTIES, CHANNEL_TEXT_PROPERTIES)
+ChannelBase = Node(CHANNEL_PROPERTIES)
 
 class Channel(ChannelBase):
     """
