@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
-from itertools import izip
+from itertools import izip, ifilter
 
 def get_get_property_from_dict_function(property_name, dict_name="_properties"):
     def _get_property_from_dict(self):
@@ -50,12 +50,27 @@ def Node(properties):
             """
             self._replies.append(reply)
 
-        def replies(self):
+        def replies(self, with_deleted=False):
             """
-                Returns list of replies.
+                Returns a tuple of replies.
             """
-            # :TODO: something like iterreplies will be good.
-            return tuple(self._replies)
+            return tuple(self.iterreplies(with_deleted))
+
+        def iterreplies(self, with_deleted=False):
+            """
+                Returns an iterator for replies.
+            """
+            def not_deleted(message):
+                return not message.deleted()
+            if with_deleted:
+                return iter(self._replies)
+            return ifilter(not_deleted, self._replies)
+
+        def replace_reply(self, old_message, new_message):
+            """
+                Replaces old_message to new_message in replies.
+            """
+            self._replies[self._replies.index(old_message)] = new_message
 
 
     # creating readonly properties like 

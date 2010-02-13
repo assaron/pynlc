@@ -110,12 +110,12 @@ if __name__ == "__main__":
                 elif cmd == 'exit':
                     break
                 elif cmd == 'ls':
-                    for msg in stack[-1].replies():
+                    for msg in stack[-1].iterreplies():
                         print msg.id()
                 elif cmd == 'cat':
                     for arg in args[1:]:
                         if arg == '*':
-                            map(print_message, stack[-1].replies())
+                            map(print_message, stack[-1].iterreplies())
                         elif arg.isdigit():
                             message_id = int(arg)
                             message = board.get_message(message_id)

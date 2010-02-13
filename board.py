@@ -209,11 +209,17 @@ class Board:
             if message.time_id() > self._last_time_id:
                 self._last_time_id = message.time_id()
 
-            self._messages[message.id()] = message
-
             if message.parent_id() == -1:
                 parent = self._channels[message.channel_id()]
             else:
                 parent = self._messages[message.parent_id()]
-            parent.add_reply(message)
 
+            if message.id() in self._messages:
+                # editing update (after Dedit or Ddel)
+                old_message = self._messages[message.id()]
+                parent.replace_reply(old_message, message)
+            else:
+                # new message
+                parent.add_reply(message)
+
+            self._messages[message.id()] = message

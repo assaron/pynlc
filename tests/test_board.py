@@ -50,14 +50,14 @@ def test_board():
 
     eq_(0, board.last_time_id())
 
-    messages = [(1, 0, -1, 0, "127.0.0.1", "host1", "nick1", "Hello world",
-                 0, 1, 0, "ff-ff-ff-ff-ff-ff", 0, 0, 0, 0, 1, 0, 0),
-                (2, 0, 1, 0, "127.0.0.2", "host2", "nick2", u"Привет и тебе",
-                 0, 1, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 2, 0, 0),
-                (3, 0, 1, 0, "255.255.255.255", "255", u"ник255", u"бугога",
-                 0, 1, 0, "00-00-00-00-00-00", 0, 0, 0, 0, 5, 0, 0),
-                (4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>\nchannel<br>\n#2",
-                 0, 2, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 3, 0, 0), ]
+    messages = [[1, 0, -1, 0, "127.0.0.1", "host1", "nick1", "Hello world",
+                 0, 1, 0, "ff-ff-ff-ff-ff-ff", 0, 0, 0, 0, 1, 0, 0],
+                [2, 0, 1, 0, "127.0.0.2", "host2", "nick2", u"Привет и тебе",
+                 0, 1, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 2, 1, 0],
+                [3, 0, 1, 0, "255.255.255.255", "255", u"ник255", u"бугога",
+                 0, 1, 0, "00-00-00-00-00-00", 0, 0, 0, 0, 5, 0, 0],
+                [4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>\nchannel<br>\n#2",
+                 0, 2, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 3, 1, 0], ]
 
     update_message = "dmagic\r" + ("\t\r".join(
             ["\t".join([unicode(field) for field in message])
@@ -68,15 +68,21 @@ def test_board():
     eq_(5, board.last_time_id())
 
     eq_([len(board.get_channel(i).replies()) for i in xrange(4)],
-        [0, 1, 1, 0])
+        [0, 1, 0, 0])
 
     eq_([len(board.get_message(i).replies()) for i in xrange(1, 5)],
+        [1, 0, 0, 0])
+
+    eq_([len(board.get_channel(i).replies(True)) for i in xrange(4)],
+        [0, 1, 1, 0])
+
+    eq_([len(board.get_message(i).replies(True)) for i in xrange(1, 5)],
         [2, 0, 0, 0])
 
     for message in messages:
         board_message = board.get_message(message[0])
-        eq_(message, tuple([getattr(board_message, field)()
-                            for field, __ in MESSAGE_PROPERTIES]))
+        eq_(message,
+            [getattr(board_message, field)() for field, __ in MESSAGE_PROPERTIES])
 
     eq_(None, board.get_message(10))
 
@@ -90,6 +96,31 @@ def test_board():
     board.delete_comments(message_id)
     eq_("Ddel\t%d\t%s\tReplyOnly\t\n" % (message_id, messages[message_id - 1][6]),
         simple_server.recieve().decode('cp1251'))
+
+    eq_(messages[2][17], 0)
+    messages[2][17] = 1
+
+
+    update_message = "dmagic\r" + (
+            "\t\r".join(
+                ["\t".join([unicode(field) for field in messages[2]])
+                ] + ['']
+                )
+            ).replace("\n","\x01")
+
+    board.handle_update(update_message.encode("cp1251"))
+
+    eq_([len(board.get_channel(i).replies()) for i in xrange(4)],
+        [0, 1, 0, 0])
+
+    eq_([len(board.get_message(i).replies()) for i in xrange(1, 5)],
+        [0, 0, 0, 0])
+
+    eq_([len(board.get_channel(i).replies(True)) for i in xrange(4)],
+        [0, 1, 1, 0])
+
+    eq_([len(board.get_message(i).replies(True)) for i in xrange(1, 5)],
+        [2, 0, 0, 0])
 
 
 def test_board_reply():
