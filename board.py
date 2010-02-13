@@ -20,6 +20,7 @@ from __future__ import with_statement
 
 from datetime import date, timedelta
 from threading import Condition
+from Queue import Queue
 
 from util import nsplit
 from node import *
@@ -75,7 +76,7 @@ class Board:
     """
         Simple board realization.
     """
-    def __init__(self, sender=None):
+    def __init__(self, sender=None, with_iternews=True):
         self._channels = None
         self._channels_sequence = None
         self._messages = {}
@@ -83,6 +84,11 @@ class Board:
         self._last_time_id = 0
         self._channels_processed = False
         self._channels_processed_condition = Condition()
+        self._with_iternews = with_iternews
+        if with_iternews:
+            self._news = Queue()
+        else:
+            self._news = None
 
     def handle_update(self, message):
         """
@@ -190,9 +196,27 @@ class Board:
         return self._last_time_id
 
     def wait_for_channels(self):
+        """
+            Waits for channels to be recieved.
+        """
         with self._channels_processed_condition:
             while not self._channels_processed:
                 self._channels_processed_condition.wait()
+
+    def iternews(self):
+        """
+            Iterates on new messages.
+            Should be called only once!
+            Iteration should go in daemonic thread!
+        """
+        import sys
+        if not self._with_iternews:
+            raise Exception(
+                    "Calling iternews() without setting with_iternews to True")
+        def _news_iterator():
+            while True:
+                yield self._news.get()
+        return _news_iterator()
 
     def handle_channels_update(self, message):
         """
@@ -237,3 +261,6 @@ class Board:
                 parent.add_reply(message)
 
             self._messages[message.id()] = message
+            if self._with_iternews:
+                self._news.put(message)
+

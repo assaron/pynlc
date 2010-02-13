@@ -25,7 +25,7 @@ sys.path.append(
     realpath(join(__file__, pardir, pardir)))
 
 from datetime import date, timedelta
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 from board import *
 from util import SimpleServer
 from threading import Thread
@@ -183,4 +183,47 @@ def test_wait_for_channels():
 
     board.handle_update(update_message.encode("cp1251"))
     waiting_thread.join()
+
+def test_iternews():
+    board = Board(with_iternews=False)
+    assert_raises(Exception, board.iternews)
+
+    board = Board()
+
+    news = board.iternews()
+
+    channels = [ (0, "#Channel0", "This is the zeroth channel"), ]
+    update_message = "dchannels\t" + "\t\r".join(
+            ["\t".join([unicode(field) for field in channel])
+                for channel in channels] + [''])
+    board.handle_update(update_message)
+
+
+    messages = [[1, 0, -1, 0, "127.0.0.1", "host1", "nick1", "Hello world",
+                 0, 0, 0, "ff-ff-ff-ff-ff-ff", 0, 0, 0, 0, 1, 0, 0],
+                [2, 0, 1, 0, "127.0.0.2", "host2", "nick2", u"Привет и тебе",
+                 0, 0, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 2, 1, 0],
+                [3, 0, 1, 0, "255.255.255.255", "255", u"ник255", u"бугога",
+                 0, 0, 0, "00-00-00-00-00-00", 0, 0, 0, 0, 5, 0, 0],
+                [4, 0, -1, 0, "127.0.0.2", "host2", "nick2", "Hello<br>\nchannel<br>\n#2",
+                 0, 0, 0, "ff-ff-ff-ff-ff-fe", 0, 0, 0, 0, 3, 1, 0], ]
+
+    update_message = "dmagic\r" + ("\t\r".join(
+            ["\t".join([unicode(field) for field in message])
+                for message in messages[0:3]] + [''])).replace("\n","\x01")
+
+    board.handle_update(update_message.encode("cp1251"))
+    eq_(news.next().id(), 1)
+
+
+    update_message = "dmagic\r" + ("\t\r".join(
+            ["\t".join([unicode(field) for field in message])
+                for message in messages[3:4]] + [''])).replace("\n","\x01")
+
+    board.handle_update(update_message.encode("cp1251"))
+    eq_(news.next().id(), 2)
+    eq_(news.next().id(), 3)
+    eq_(news.next().id(), 4)
+
+
 
