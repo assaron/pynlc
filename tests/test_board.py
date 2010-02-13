@@ -28,6 +28,7 @@ from datetime import date, timedelta
 from nose.tools import eq_
 from board import *
 from util import SimpleServer
+from threading import Thread
 
 def test_board():
     board = Board()
@@ -162,3 +163,24 @@ def test_board_up_message():
     board.up_message(message_id)
 
     eq_("Dup\t%d\n" % message_id, simple_server.recieve().decode('cp1251'))
+
+def test_wait_for_channels():
+    board = Board()
+    waiting_thread = Thread(target = board.wait_for_channels)
+    waiting_thread.start()
+    eq_(waiting_thread.isAlive(), True)
+    channels = [ (0, "#Channel0", "This is the zeroth channel"),
+                 (2, "#Channel2", "This is the zeroth channel"),
+                 (3, "#Channel3", "This is the zeroth channel"),
+                 (1, u"#1 канал", u"Первый канал представляет"),]
+    eq_(waiting_thread.isAlive(), True)
+
+    update_message = "dchannels\t" + "\t\r".join(
+            ["\t".join([unicode(field) for field in channel])
+                for channel in channels] + [''])
+
+    eq_(waiting_thread.isAlive(), True)
+
+    board.handle_update(update_message.encode("cp1251"))
+    waiting_thread.join()
+
