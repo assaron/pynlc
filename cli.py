@@ -20,7 +20,6 @@
 
 import sys
 import threading
-import time
 import os
 import traceback
 from tempfile import mkstemp
@@ -63,8 +62,8 @@ if __name__ == "__main__":
 
         board.update()
 
-        # wait for dchannels message to be processed
-        time.sleep(0.1) 
+        board.wait_for_channels()
+
         stack = [board.get_channel(0)]
         while True:
             prompt = "#%s$ " % ("/".join([`node.id()` for node in stack]))

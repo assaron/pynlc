@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import with_statement
 # 
 # Copyrigt 2010 Aleksey Sergushichev <alsergbox@gmail.com>
 # 
@@ -18,6 +19,7 @@
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import date, timedelta
+from threading import Condition
 
 from util import nsplit
 from node import *
@@ -79,6 +81,8 @@ class Board:
         self._messages = {}
         self._sender = sender
         self._last_time_id = 0
+        self._channels_processed = False
+        self._channels_processed_condition = Condition()
 
     def handle_update(self, message):
         """
@@ -185,6 +189,11 @@ class Board:
         """
         return self._last_time_id
 
+    def wait_for_channels(self):
+        with self._channels_processed_condition:
+            while not self._channels_processed:
+                self._channels_processed_condition.wait()
+
     def handle_channels_update(self, message):
         """
             Handles dchannels message.
@@ -196,6 +205,11 @@ class Board:
             channel = Channel(channel_update)
             self._channels[channel.id()] = channel
             self._channels_sequence.append(channel.id())
+
+        with self._channels_processed_condition:
+            self._channels_processed = True
+            self._channels_processed_condition.notifyAll()
+
 
     def handle_messages_update(self, header, messages_update):
         """
