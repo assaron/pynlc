@@ -39,8 +39,7 @@ def print_message(msg):
     print ""
     print "====================="
     print "From:", msg.nick()
-    date = config.EPOCH_START_SECONDS + timedelta(0, msg.post_time())
-    print "Date:", date.ctime()
+    print "Date:", msg.post_time().ctime()
     print "ID:", msg.id()
     print "---------------------"
     print msg.body()

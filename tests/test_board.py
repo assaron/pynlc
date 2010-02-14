@@ -82,8 +82,12 @@ def test_board():
 
     for message in messages:
         board_message = board.get_message(message[0])
-        eq_(message,
-            [getattr(board_message, field)() for field, __ in MESSAGE_PROPERTIES])
+        for i, (field, decoder) in enumerate(MESSAGE_PROPERTIES):
+            if not decoder:
+                def identity(x):
+                    return x
+                decoder = identity
+            eq_(decoder(unicode(message[i]).encode("cp1251")), getattr(board_message, field)())
 
     eq_(None, board.get_message(10))
 

@@ -18,6 +18,9 @@
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
 from itertools import izip, ifilter
+from datetime import timedelta
+
+import config
 
 def get_get_property_from_dict_function(property_name, dict_name="_properties"):
     def _get_property_from_dict(self):
@@ -25,9 +28,14 @@ def get_get_property_from_dict_function(property_name, dict_name="_properties"):
     return _get_property_from_dict
 
 int_decoder = int
+
 str_decoder = None
+
 def unicode_decoder(string):
     return string.decode("cp1251")
+
+def time_decoder(string):
+    return config.EPOCH_START_SECONDS + timedelta(0, int(string))
 
 def Node(properties):
     """

@@ -30,10 +30,10 @@ MESSAGE_PROPERTIES = (
     ("id", int_decoder), ("unknown1", int_decoder), ("parent_id", int_decoder),
     ("delete_", int_decoder), ("IP", str_decoder), ("hostname", unicode_decoder),
     ("nick", unicode_decoder), ("body", unicode_decoder),
-    ("edit_time", int_decoder), ("channel_id", int_decoder),
+    ("edit_time", time_decoder), ("channel_id", int_decoder),
     ("unknown2", int_decoder), ("mac", str_decoder), ("zero1", int_decoder),
     ("zero2", int_decoder), ("zero3", int_decoder), ("zero4", int_decoder),
-    ("time_id", int_decoder), ("deleted", int_decoder), ("post_time", int_decoder)
+    ("time_id", int_decoder), ("deleted", int_decoder), ("post_time", time_decoder)
     )
 
 # Message base class
