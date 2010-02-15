@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from threading import Condition
 from Queue import Queue
 
-from util import nsplit
+from util import nsplit, get_expiration_day
 from node import *
 import config
 
@@ -128,12 +128,24 @@ class Board:
         """
             Creates new message on the channel with the actuality period in days.
         """
-        expiration_date = (date.today() + timedelta(actuality_period) -
-                           config.EPOCH_START_DAYS).days
-        message = message.replace("\n","\r").encode("cp1251");
+        expiration_date = get_expiration_day(actuality_period)
+        message = message.replace("\n","\r").encode("cp1251")
         nick = nick.encode("cp1251")
         self._sender("Dadd\t%d\t%d\t%s\t%s\n" %
                         (channel_id, expiration_date, nick, message))
+
+    def edit_message(self, message_id, new_message,
+                     new_nick, actuality_period=50):
+        """
+            Changes message.
+        """
+        message = self._messages[message_id]
+        new_message = new_message.replace("\n","\r").encode("cp1251")
+        new_nick = new_nick.encode("cp1251")
+        expiration_date = get_expiration_day(actuality_period)
+        self._sender("Dedit\t%d\t%d\t%d\t%d\t%s\t%s\t\t" %
+                (message_id, message.channel_id(), expiration_date,
+                 message.parent_id(), new_nick, new_message))
 
     def delete_message(self, message_id):
         """

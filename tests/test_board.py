@@ -102,6 +102,16 @@ def test_board():
     eq_("Ddel\t%d\t%s\tReplyOnly\t\n" % (message_id, messages[message_id - 1][6]),
         simple_server.recieve().decode('cp1251'))
 
+    expiration_date = (date.today() + timedelta(50) - date(1899, 12, 30)).days
+    new_message = u"измененное\nсообщение"
+    new_nick = u"измененный ник"
+    board.edit_message(message_id, new_message, new_nick)
+    eq_("Dedit\t%d\t%d\t%d\t%d\t%s\t%s\t\t" %
+            (message_id, messages[message_id - 1][9], expiration_date,
+             messages[message_id - 1][2], new_nick,
+             new_message.replace("\n","\r")),
+        simple_server.recieve().decode('cp1251'))
+
     eq_(messages[2][17], 0)
     messages[2][17] = 1
 

@@ -18,6 +18,9 @@
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+from datetime import date, timedelta
+
+import config
 
 def ping(server):
     """
@@ -61,3 +64,6 @@ class SimpleServer:
     def recieve(self):
         return self.message
 
+def get_expiration_day(actuality_period):
+    return (date.today() + timedelta(actuality_period) -
+            config.EPOCH_START_DAYS).days
