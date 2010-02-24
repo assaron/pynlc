@@ -240,4 +240,10 @@ def test_iternews():
     eq_(news.next().id(), 4)
 
 
+def test_auto_update():
+    simple_server = SimpleServer()
+    board = Board(simple_server.send)
+    board.handle_update("dnew\n")
+    eq_("Dlast\t0", simple_server.recieve()[:7])
+
 

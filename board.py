@@ -98,7 +98,7 @@ class Board:
         message = message[1:]
         type_, message = nsplit(message, 2)
         actions = { "channels" : self.handle_channels_update,
-                    "new" : None,
+                    "new" : self.handle_new,
                     "admin" : None,
                     "skins" : None,
                     "skin" : None }
@@ -229,6 +229,12 @@ class Board:
             while True:
                 yield self._news.get()
         return _news_iterator()
+
+    def handle_new(self, message):
+        """
+            Handles 'dnew' message calling update().
+        """
+        self.update()
 
     def handle_channels_update(self, message):
         """
