@@ -240,9 +240,11 @@ class Board:
         """
             Handles dchannels message.
             Creates channels list.
+            Clears previously recieved channels and messages.
         """
         self._channels = {}
         self._channels_sequence = []
+        self._messages = {}
         for channel_update in message.split("\r")[:-1]:
             channel = Channel(channel_update)
             self._channels[channel.id()] = channel

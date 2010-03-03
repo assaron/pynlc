@@ -18,7 +18,7 @@
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-import Queue 
+import Queue
 import threading
 
 import config

@@ -175,6 +175,10 @@ if __name__ == "__main__":
                 print "Unhandled exception:"
                 traceback.print_exc()
 
+    except:
+        print "Unhandled exception:"
+        traceback.print_exc()
+        print "Exiting..."
 
     finally:
         core.stop_and_wait()
