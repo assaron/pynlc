@@ -1,3 +1,10 @@
 #!/bin/sh
 CXXFLAGS=-O2 make encode
-python cli.py
+
+case "$1" in
+	-g) 
+		python cli-gtk.py ;;
+	
+	*) 
+		python cli.py
+esac
