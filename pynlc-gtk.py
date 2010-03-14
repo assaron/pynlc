@@ -41,93 +41,47 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-ui_info = \
-'''<ui>
-  <menubar name='MenuBar'>
-    <menu action='FileMenu'>
-      <menuitem action='Update'/>
-      <separator/>
-      <menuitem action='Quit'/>
-    </menu>
-    <menu action='PreferencesMenu'>
-    </menu>
-    <menu action='HelpMenu'>
-      <menuitem action='About'/>
-    </menu>
-  </menubar>
-</ui>'''
-
-
 class NetLandGTK(gtk.Window):
+    """
+        GTK interface.
+    """
     def __init__(self, parent=None):
-        self._channels_trees = {}
-
+        """
+            Create GTK interface.
+        """
         gtk.gdk.threads_init()
         gtk.Window.__init__(self)
         try:
             self.set_screen(parent.get_screen())
         except AttributeError:
             self.connect('destroy', lambda *w: gtk.main_quit() )
+        
         self.set_title("NetLand Client GTK")
         self.set_default_size(640, 480)
 
-        merge = gtk.UIManager()
-        self.set_data("ui-manager", merge)
-        merge.insert_action_group(self.create_action_group(), 0)
-        self.add_accel_group(merge.get_accel_group())
-
-        try:
-            mergeid = merge.add_ui_from_string(ui_info)
-        except gobject.GError, msg:
-            print "building menus failed: %s" % msg
-        bar = merge.get_widget("/MenuBar")
-        bar.show()
-               
         table = gtk.Table(1, 4, False)
-        self.add(table)
-
-        table.attach(bar,
+        table.attach( self.create_bar(),
             # X direction #          # Y direction
             0, 1,                      0, 1,
             gtk.EXPAND | gtk.FILL,     0,
             0,                         0)
-        
-        self.board = gtk.Notebook()
-        self.board.set_tab_pos(gtk.POS_BOTTOM)
-        for channel_id in board._channels:
-            sw = gtk.ScrolledWindow()
-            sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-            sw.set_shadow_type(gtk.SHADOW_IN)
-            
-            self._channels_trees[channel_id] = gtk.TreeStore(str)
-            channel = [board.get_channel(channel_id)]
-            sw.add(self.draw_channel(channel, self._channels_trees[channel_id]))
-            
-            label = gtk.Label("/".join([node.name()[1:] for node in channel]))
-            label.show()
-            self.board.append_page(sw, label)
-        self.board.show()
-
-        table.attach(self.board,
+        table.attach( self.create_board(),
             # X direction           Y direction
             0, 1,                   2, 3,
             gtk.EXPAND | gtk.FILL,  gtk.EXPAND | gtk.FILL,
             0,                      0)
-        
-        statusbar = gtk.Statusbar()
-        statusbar.show()
-        context_id = statusbar.get_context_id("Statusbar")
-        statusbar.push(context_id, "Statusbar")
-
-        table.attach(statusbar,
+        table.attach( self.create_statusbar(),
             # X direction           Y direction
             0, 1,                   3, 4,
             gtk.EXPAND | gtk.FILL,  0,
-            0,                      0)
-        
+            0,                      0)        
+        self.add(table)
         self.show_all()
 
     def create_action_group(self):
+        """
+            Create action group for menubar.
+        """
         entries = (
           ( "FileMenu", None, "_Файл" ),
           ( "PreferencesMenu", None, "_Настройки" ),
@@ -149,26 +103,93 @@ class NetLandGTK(gtk.Window):
         action_group.add_actions(entries)
         return action_group
 
-    def draw_channel(self, channel, channel_tree):
-        treeview = gtk.TreeView(channel_tree)
-        channel_name = "/".join([node.name()[1:] for node in channel])
-        channel_name += " :: "+"/".join([node.description() for node in channel])
-        tvcolumn = gtk.TreeViewColumn(channel_name)
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        cell.set_property('editable', True)
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        return treeview
-    
-    def update_channels_trees(self, action):
+    def create_bar(self):
+        """
+            Create menubar.
+        """
+        ui_info = \
+'''<ui>
+  <menubar name='MenuBar'>
+    <menu action='FileMenu'>
+      <menuitem action='Update'/>
+      <separator/>
+      <menuitem action='Quit'/>
+    </menu>
+    <menu action='PreferencesMenu'>
+    </menu>
+    <menu action='HelpMenu'>
+      <menuitem action='About'/>
+    </menu>
+  </menubar>
+</ui>'''
+        
+        merge = gtk.UIManager()
+        self.set_data("ui-manager", merge)
+        merge.insert_action_group(self.create_action_group(), 0)
+        self.add_accel_group(merge.get_accel_group())
+        try:
+            mergeid = merge.add_ui_from_string(ui_info)
+        except gobject.GError, msg:
+            print "building menus failed: %s" % msg
+        bar = merge.get_widget("/MenuBar")
+        bar.show()
+        return bar
+
+    def create_board(self):
+        """
+            Create gtk.Notebook with board.
+        """
+        self.board = gtk.Notebook()
+        self.board.set_tab_pos(gtk.POS_BOTTOM)
         for channel_id in board._channels:
+            sw = gtk.ScrolledWindow()
+            sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+            sw.set_shadow_type(gtk.SHADOW_IN)
+            
+            board._channels[channel_id].tree = gtk.TreeStore(str)
+            channel_tree = gtk.TreeView(board._channels[channel_id].tree)
+            channel = [board._channels[channel_id]]
+            channel_name = "/".join([node.name()[1:] for node in channel]) + " :: "+"/".join([node.description() for node in channel])
+            column = gtk.TreeViewColumn(channel_name)
+            channel_tree.append_column(column)
+            cell = gtk.CellRendererText()
+            cell.set_property('editable', True)
+            column.pack_start(cell, True)
+            column.add_attribute(cell, 'text', 0)
+            channel_tree.set_search_column(0)
+            sw.add(channel_tree)
+            
+            label = gtk.Label("/".join([node.name()[1:] for node in channel]))
+            label.show()
+            self.board.append_page(sw, label)
+        self.board.show()
+        return self.board
+
+    def create_statusbar(self):
+        """
+            Create simple statusbar.
+        """
+        statusbar = gtk.Statusbar()
+        statusbar.show()
+        context_id = statusbar.get_context_id("Statusbar")
+        statusbar.push(context_id, "Statusbar")
+        return statusbar
+
+    def update_channels_trees(self, action):
+        """
+            Update information on board.
+        """
+        board.update()
+        for channel_id in board._channels:
+            board._channels[channel_id].tree.clear()
             channel = [board.get_channel(channel_id)]
             for msg in channel[-1].iterreplies():
-                self._channels_trees[channel_id].append(None, ['<b>%s :: <i>%s</i></b>\n%s' % (msg.nick(), msg.post_time().ctime(), msg.body())])
+                board._channels[channel_id].tree.append(None, ['<b>%s :: <i>%s</i></b>\n%s' % (msg.nick(), msg.post_time().ctime(), msg.body())])
 
     def activate_about(self, action):
+        """
+            Show window with about information.
+        """
         dialog = gtk.AboutDialog()
         dialog.set_name("PyNLC GTK")
         dialog.set_copyright("\302\251 Copyright 201x the PyNLC Team")
