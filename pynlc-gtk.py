@@ -152,11 +152,15 @@ class NetLandGTK(gtk.Window):
             channel_name = "/".join([node.name()[1:] for node in channel]) + " :: "+"/".join([node.description() for node in channel])
             column = gtk.TreeViewColumn(channel_name)
             channel_tree.append_column(column)
+            channel_tree.set_enable_tree_lines(True)
             cell = gtk.CellRendererText()
+            '''
             cell.set_property('editable', True)
+            '''
             column.pack_start(cell, True)
             column.add_attribute(cell, 'text', 0)
             channel_tree.set_search_column(0)
+            channel_tree.connect("row-activated", self.get_internal_messages, channel_id)
             sw.add(channel_tree)
             
             label = gtk.Label("/".join([node.name()[1:] for node in channel]))
@@ -184,7 +188,20 @@ class NetLandGTK(gtk.Window):
             board._channels[channel_id].tree.clear()
             channel = [board.get_channel(channel_id)]
             for msg in channel[-1].iterreplies():
-                board._channels[channel_id].tree.append(None, ['<b>%s :: <i>%s</i></b>\n%s' % (msg.nick(), msg.post_time().ctime(), msg.body())])
+                board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(None, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
+
+    def get_internal_messages(self, treeview, patch, column, channel_id):
+        """
+            Get and draw internal messages.
+        """
+        head_message = [board.get_channel(channel_id)][-1]
+        for pos in patch:
+            head_message = head_message.replies()[pos]
+        for msg in head_message.iterreplies():
+            try:
+                board._messages[msg.id()].tree_id
+            except:
+                board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(board._messages[msg.parent_id()].tree_id, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
 
     def activate_about(self, action):
         """
