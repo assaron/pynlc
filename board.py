@@ -192,6 +192,17 @@ class Board:
             return self._channels[id]
         return None
 
+    def get_channel_name(self, channel, with_description=False):
+        """
+            Returns a channel name by channel.
+            Returns a channel name with description by channel.
+        """
+        if with_description:
+            return "/".join([node.name()[1:] for node in channel]) +\
+            " :: "+"/".join([node.description() for node in channel])
+        else:
+            return "/".join([node.name()[1:] for node in channel])
+
     def get_message(self, id):
         """
             Returns a message by id. 

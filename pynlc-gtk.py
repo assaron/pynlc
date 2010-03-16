@@ -54,7 +54,7 @@ class NetLandGTK(gtk.Window):
         try:
             self.set_screen(parent.get_screen())
         except AttributeError:
-            self.connect('destroy', lambda *w: gtk.main_quit() )
+            self.connect('destroy', lambda *w: gtk.main_quit())
         
         self.set_title("NetLand Client GTK")
         self.set_default_size(640, 480)
@@ -77,7 +77,7 @@ class NetLandGTK(gtk.Window):
             0,                      0)        
         self.add(table)
         self.show_all()
-
+    
     def create_action_group(self):
         """
             Create action group for menubar.
@@ -94,15 +94,19 @@ class NetLandGTK(gtk.Window):
             "_Выход", "<control>Q",
             "Quit",
             lambda *w: gtk.main_quit() ),
+          ( "Profile", gtk.STOCK_PROPERTIES,
+            "_Профиль", "<control>P",
+            "Profile",
+            self.show_profile_window ),
           ( "About", gtk.STOCK_ABOUT,
             "_О программе", "<control>A",
             "About",
-            self.activate_about ),
+            self.show_about_window ),
         );
         action_group = gtk.ActionGroup("AppWindowActions")
         action_group.add_actions(entries)
         return action_group
-
+    
     def create_bar(self):
         """
             Create menubar.
@@ -116,6 +120,7 @@ class NetLandGTK(gtk.Window):
       <menuitem action='Quit'/>
     </menu>
     <menu action='PreferencesMenu'>
+      <menuitem action='Profile'/>
     </menu>
     <menu action='HelpMenu'>
       <menuitem action='About'/>
@@ -134,7 +139,7 @@ class NetLandGTK(gtk.Window):
         bar = merge.get_widget("/MenuBar")
         bar.show()
         return bar
-
+    
     def create_board(self):
         """
             Create gtk.Notebook with board.
@@ -149,8 +154,7 @@ class NetLandGTK(gtk.Window):
             board._channels[channel_id].tree = gtk.TreeStore(str)
             channel_tree = gtk.TreeView(board._channels[channel_id].tree)
             channel = [board._channels[channel_id]]
-            channel_name = "/".join([node.name()[1:] for node in channel]) + " :: "+"/".join([node.description() for node in channel])
-            column = gtk.TreeViewColumn(channel_name)
+            column = gtk.TreeViewColumn(board.get_channel_name(channel, True))
             channel_tree.append_column(column)
             channel_tree.set_enable_tree_lines(True)
             cell = gtk.CellRendererText()
@@ -163,12 +167,12 @@ class NetLandGTK(gtk.Window):
             channel_tree.connect("row-activated", self.get_internal_messages, channel_id)
             sw.add(channel_tree)
             
-            label = gtk.Label("/".join([node.name()[1:] for node in channel]))
+            label = gtk.Label(board.get_channel_name(channel))
             label.show()
             self.board.append_page(sw, label)
         self.board.show()
         return self.board
-
+    
     def create_statusbar(self):
         """
             Create simple statusbar.
@@ -178,7 +182,7 @@ class NetLandGTK(gtk.Window):
         context_id = statusbar.get_context_id("Statusbar")
         statusbar.push(context_id, "Statusbar")
         return statusbar
-
+    
     def update_channels_trees(self, action):
         """
             Update information on board.
@@ -189,7 +193,7 @@ class NetLandGTK(gtk.Window):
             channel = [board.get_channel(channel_id)]
             for msg in channel[-1].iterreplies():
                 board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(None, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
-
+    
     def get_internal_messages(self, treeview, patch, column, channel_id):
         """
             Get and draw internal messages.
@@ -202,15 +206,46 @@ class NetLandGTK(gtk.Window):
                 board._messages[msg.id()].tree_id
             except:
                 board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(board._messages[msg.parent_id()].tree_id, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
+    
+    def show_profile_window(self, action):
+        """
+            Show window with profile settings.
+        """
+        global nick
+        dialog = gtk.Dialog("Настройки профиля", self, 0, 
+                        (gtk.STOCK_OK, gtk.RESPONSE_OK,))
+        
+        hbox = gtk.HBox(False, 8)
+        hbox.set_border_width(8)
+        dialog.vbox.pack_start(hbox, False, False, 0)
+        
+        table = gtk.Table(2, 1)
+        table.set_row_spacings(4)
+        table.set_col_spacings(4)
+        hbox.pack_start(table, True, True, 0)
+        label = gtk.Label("Ник:")
+        label.set_use_underline(True)
+        table.attach(label, 0, 1, 0, 1)
+        
+        nick_entry = gtk.Entry()
+        nick_entry.set_text(nick)
+        table.attach(nick_entry, 1, 2, 0, 1)
+        
+        label.set_mnemonic_widget(nick_entry)
+        dialog.show_all()
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            nick = nick_entry.get_text()
+        dialog.destroy()
 
-    def activate_about(self, action):
+    def show_about_window(self, action):
         """
             Show window with about information.
         """
         dialog = gtk.AboutDialog()
         dialog.set_name("PyNLC GTK")
         dialog.set_copyright("\302\251 Copyright 201x the PyNLC Team")
-        dialog.set_website("http://")
+        dialog.set_website("http://csm/git")
         dialog.connect ("response", lambda d, r: d.destroy())
         dialog.show()
 
