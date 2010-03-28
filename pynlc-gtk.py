@@ -32,7 +32,12 @@ from guppy import hpy
 from core import ClientCore
 from board import *
 from auth import Authentificator
+<<<<<<< HEAD
 from util import print_function, get_channel_name
+=======
+from util import print_function
+from html2markup import *
+>>>>>>> html2markup
 
 import config
 
@@ -194,7 +199,8 @@ class NetLandGTK(gtk.Window):
                         None,
                         ['%s :: %s | %s\n%s' %
                             (msg.nick(), msg.IP(),
-                            msg.post_time().ctime(), msg.body())])
+                            msg.post_time().ctime(),
+                            parser.convert(msg.body()))])
     
     def get_internal_messages(self, treeview, patch, column, channel_id):
         """
@@ -210,7 +216,7 @@ class NetLandGTK(gtk.Window):
                         ['%s :: %s | %s\n%s' %
                             (msg.nick(), msg.IP(),
                             msg.post_time().ctime(),
-                            msg.body())])
+                            parser.convert(msg.body()))])
     
     def show_profile_window(self, action):
         """
@@ -271,6 +277,8 @@ if __name__ == "__main__":
 
     board.update()
     board.wait_for_channels()
+
+    parser = Html2Markup()
 
     NetLandGTK()
     gtk.main()
