@@ -32,13 +32,8 @@ from guppy import hpy
 from core import ClientCore
 from board import *
 from auth import Authentificator
-<<<<<<< HEAD
 from util import print_function, get_channel_name
-=======
-from util import print_function
 from html2markup import *
->>>>>>> html2markup
-
 import config
 
 import pygtk
