@@ -67,3 +67,14 @@ class SimpleServer:
 def get_expiration_day(actuality_period):
     return (date.today() + timedelta(actuality_period) -
             config.EPOCH_START_DAYS).days
+
+def get_channel_name(channel, with_description=False):
+    """
+        Returns a channel name by channel.
+        Returns a channel name with description by channel.
+    """
+    if with_description:
+        return channel.name()[1:] + " :: " + channel.description()
+    else:
+        return channel.name()[1:]
+

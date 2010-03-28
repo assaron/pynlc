@@ -32,7 +32,7 @@ from guppy import hpy
 from core import ClientCore
 from board import *
 from auth import Authentificator
-from util import print_function
+from util import print_function, get_channel_name
 
 import config
 
@@ -146,15 +146,14 @@ class NetLandGTK(gtk.Window):
         """
         self.board = gtk.Notebook()
         self.board.set_tab_pos(gtk.POS_BOTTOM)
-        for channel_id in board._channels:
+        for channel in board.channels_list():
             sw = gtk.ScrolledWindow()
             sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
             sw.set_shadow_type(gtk.SHADOW_IN)
             
-            board._channels[channel_id].tree = gtk.TreeStore(str)
-            channel_tree = gtk.TreeView(board._channels[channel_id].tree)
-            channel = [board._channels[channel_id]]
-            column = gtk.TreeViewColumn(board.get_channel_name(channel, True))
+            channel.tree = gtk.TreeStore(str)
+            channel_tree = gtk.TreeView(channel.tree)
+            column = gtk.TreeViewColumn(get_channel_name(channel, True))
             channel_tree.append_column(column)
             channel_tree.set_enable_tree_lines(True)
             cell = gtk.CellRendererText()
@@ -164,10 +163,10 @@ class NetLandGTK(gtk.Window):
             column.pack_start(cell, True)
             column.add_attribute(cell, 'text', 0)
             channel_tree.set_search_column(0)
-            channel_tree.connect("row-activated", self.get_internal_messages, channel_id)
+            channel_tree.connect("row-activated", self.get_internal_messages, channel.id())
             sw.add(channel_tree)
             
-            label = gtk.Label(board.get_channel_name(channel))
+            label = gtk.Label(get_channel_name(channel))
             label.show()
             self.board.append_page(sw, label)
         self.board.show()
@@ -188,31 +187,37 @@ class NetLandGTK(gtk.Window):
             Update information on board.
         """
         board.update()
-        for channel_id in board._channels:
-            board._channels[channel_id].tree.clear()
-            channel = [board.get_channel(channel_id)]
-            for msg in channel[-1].iterreplies():
-                board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(None, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
+        for channel in board.channels_list():
+            channel.tree.clear()
+            for msg in channel.iterreplies():
+                msg.tree_id = channel.tree.append(
+                        None,
+                        ['%s :: %s | %s\n%s' %
+                            (msg.nick(), msg.IP(),
+                            msg.post_time().ctime(), msg.body())])
     
     def get_internal_messages(self, treeview, patch, column, channel_id):
         """
             Get and draw internal messages.
         """
-        head_message = [board.get_channel(channel_id)][-1]
+        head_message = board.get_channel(channel_id)
         for pos in patch:
             head_message = head_message.replies()[pos]
         for msg in head_message.iterreplies():
-            try:
-                board._messages[msg.id()].tree_id
-            except:
-                board._messages[msg.id()].tree_id = board._channels[channel_id].tree.append(board._messages[msg.parent_id()].tree_id, ['%s :: %s | %s\n%s' % (msg.nick(), msg.IP(), msg.post_time().ctime(), msg.body())])
+            if not hasattr(msg, 'tree_id'):
+                msg.tree_id = board.get_channel(channel_id).tree.append(
+                        board.get_message(msg.parent_id()).tree_id,
+                        ['%s :: %s | %s\n%s' %
+                            (msg.nick(), msg.IP(),
+                            msg.post_time().ctime(),
+                            msg.body())])
     
     def show_profile_window(self, action):
         """
             Show window with profile settings.
         """
         global nick
-        dialog = gtk.Dialog("Настройки профиля", self, 0, 
+        dialog = gtk.Dialog("Настройки профиля", self, 0,
                         (gtk.STOCK_OK, gtk.RESPONSE_OK,))
         
         hbox = gtk.HBox(False, 8)
