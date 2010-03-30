@@ -33,7 +33,6 @@ from core import ClientCore
 from board import *
 from auth import Authentificator
 from util import print_function, get_channel_name
-from html2markup import *
 import config
 
 import pygtk
@@ -149,26 +148,21 @@ class NetLandGTK(gtk.Window):
         for channel in board.channels_list():
             sw = gtk.ScrolledWindow()
             sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-            sw.set_shadow_type(gtk.SHADOW_IN)
+            sw.set_shadow_type(gtk.SHADOW_NONE)
             
-            channel.tree = gtk.TreeStore(str)
-            channel_tree = gtk.TreeView(channel.tree)
-            column = gtk.TreeViewColumn(get_channel_name(channel, True))
-            channel_tree.append_column(column)
-            channel_tree.set_enable_tree_lines(True)
-            cell = gtk.CellRendererText()
-            '''
-            cell.set_property('editable', True)
-            '''
-            column.pack_start(cell, True)
-            column.add_attribute(cell, 'text', 0)
-            channel_tree.set_search_column(0)
-            channel_tree.connect("row-activated", self.get_internal_messages, channel.id())
-            sw.add(channel_tree)
+            channel.tree = gtk.Table()
+            channel.tree.show()
+            channel.vp = gtk.Viewport()
+            channel.vp.set_shadow_type(gtk.SHADOW_IN)
+            channel.vp.add(channel.tree)
+            sw.add(channel.vp)
             
-            label = gtk.Label(get_channel_name(channel))
-            label.show()
-            self.board.append_page(sw, label)
+            name = gtk.Label(get_channel_name(channel))
+            name.show()
+            frame = gtk.Frame()
+            frame.set_label(get_channel_name(channel, True))
+            frame.add(sw)
+            self.board.append_page(frame, name)
         self.board.show()
         return self.board
     
@@ -187,31 +181,92 @@ class NetLandGTK(gtk.Window):
             Update information on board.
         """
         board.update()
+        i = 0
         for channel in board.channels_list():
-            channel.tree.clear()
+            channel.tree.destroy()
+            channel.tree = gtk.Table()
+            channel.tree.show()
+            channel.vp.add(channel.tree)
             for msg in channel.iterreplies():
-                msg.tree_id = channel.tree.append(
-                        None,
-                        ['%s :: %s | %s\n%s' %
-                            (msg.nick(), msg.IP(),
-                            msg.post_time().ctime(),
-                            parser.convert(msg.body()))])
-    
-    def get_internal_messages(self, treeview, patch, column, channel_id):
+                channel.tree.attach( self.create_msg_table(msg),
+                    # X direction #          # Y direction
+                    0, 1,                      i, i+1,
+                    gtk.EXPAND | gtk.FILL,     0,
+                    5,                         5)
+                i = i + 1
+
+    def get_internal_messages(self, widget, msg_table):
         """
             Get and draw internal messages.
         """
-        head_message = board.get_channel(channel_id)
-        for pos in patch:
-            head_message = head_message.replies()[pos]
-        for msg in head_message.iterreplies():
-            if not hasattr(msg, 'tree_id'):
-                msg.tree_id = board.get_channel(channel_id).tree.append(
-                        board.get_message(msg.parent_id()).tree_id,
-                        ['%s :: %s | %s\n%s' %
-                            (msg.nick(), msg.IP(),
-                            msg.post_time().ctime(),
-                            parser.convert(msg.body()))])
+        msg_table.bar.show()
+        int_table = gtk.Table()
+        message = board.get_message(msg_table.id)
+        i = 0
+        for msg in message.iterreplies():
+            int_table.attach( self.create_msg_table(msg),
+                # X direction #          # Y direction
+                0, 1,                      i, i+1,
+                gtk.EXPAND | gtk.FILL,     0,
+                5,                         5)
+            i = i + 1
+        msg_table.bar.destroy()
+        msg_table.button.destroy()
+        msg_table.attach( int_table,
+            # X direction #          # Y direction
+            0, 2,                      1, 2,
+            gtk.EXPAND | gtk.FILL,     0,
+            0,                         0)
+        int_table.show()
+
+    def create_msg_table(self, msg):
+        """
+            Create and return message table.
+        """
+        msg_table = gtk.Table(2, 2, False)
+        msg_table.id = msg.id()
+
+        msg_frame = gtk.Frame()
+        msg_frame.set_label(
+            '%s :: %s | %s' %
+            (msg.nick(), msg.IP(),
+            msg.post_time().ctime()))
+        msg_body = gtk.TextView()
+        msg_body.set_wrap_mode(gtk.WRAP_WORD)
+        msg_body.set_editable(False)
+        buf = msg_body.get_buffer()
+        iter = buf.get_iter_at_offset(0)
+        buf.insert(iter, msg.body());
+        msg_body.show()
+        msg_frame.add(msg_body)
+        msg_frame.show()
+        msg_table.attach( msg_frame,
+            # X direction #          # Y direction
+            0, 2,                      0, 1,
+            gtk.EXPAND | gtk.FILL,     0,
+            0,                         0)
+        
+        if True: 
+            ''' 
+                Вместо тру нужен метод проверки вложений 
+            '''
+            msg_table.button = gtk.Button("+")
+            msg_table.button.connect("clicked", self.get_internal_messages, msg_table)
+            msg_table.button.show()
+            msg_table.bar = gtk.ProgressBar()
+            msg_table.attach( msg_table.button,
+                # X direction #          # Y direction
+                0, 1,                      1, 2,
+                0,                         0,
+                0,                         0)
+            msg_table.attach( msg_table.bar,
+                # X direction #          # Y direction
+                1, 2,                      1, 2,
+                gtk.EXPAND | gtk.FILL,     0,
+                20,                        0)
+        msg_table.bar.show()
+        msg_table.show()
+        return msg_table
     
     def show_profile_window(self, action):
         """
@@ -272,8 +327,6 @@ if __name__ == "__main__":
 
     board.update()
     board.wait_for_channels()
-
-    parser = Html2Markup()
 
     NetLandGTK()
     gtk.main()
