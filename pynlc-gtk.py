@@ -175,7 +175,7 @@ class NetLandGTK(gtk.Window):
         context_id = statusbar.get_context_id("Statusbar")
         statusbar.push(context_id, "Statusbar")
         return statusbar
-    
+
     def update_channels_trees(self, action):
         """
             Update information on board.
@@ -192,32 +192,45 @@ class NetLandGTK(gtk.Window):
                     # X direction #          # Y direction
                     0, 1,                      i, i+1,
                     gtk.EXPAND | gtk.FILL,     0,
-                    5,                         5)
+                    0,                         0)
                 i = i + 1
 
     def get_internal_messages(self, widget, msg_table):
         """
             Get and draw internal messages.
         """
-        msg_table.bar.show()
-        int_table = gtk.Table()
+        msg_table.child = gtk.Table()
         message = board.get_message(msg_table.id)
         i = 0
         for msg in message.iterreplies():
-            int_table.attach( self.create_msg_table(msg),
+            msg_table.child.attach( self.create_msg_table(msg),
                 # X direction #          # Y direction
                 0, 1,                      i, i+1,
                 gtk.EXPAND | gtk.FILL,     0,
-                5,                         5)
+                0,                         0)
             i = i + 1
-        msg_table.bar.destroy()
-        msg_table.button.destroy()
-        msg_table.attach( int_table,
+        msg_table.button.set_label("-")
+        msg_table.button.connect("clicked", self.hide_internal_messages, msg_table)
+        msg_table.attach( gtk.Label(" "),
             # X direction #          # Y direction
-            0, 2,                      1, 2,
+            0, 1,                      1, 2,
+            gtk.EXPAND | gtk.FILL,     0,
+            5,                         0)
+        msg_table.attach( msg_table.child,
+            # X direction #          # Y direction
+            1, 2,                      1, 2,
             gtk.EXPAND | gtk.FILL,     0,
             0,                         0)
-        int_table.show()
+        msg_table.child.show()
+
+    def hide_internal_messages(self, widget, msg_table):
+        """
+            Hide internal messages.
+        """
+        msg_table.button.set_label("+ [%s]"%msg_table.nchilds)
+        msg_table.button.connect("clicked", self.get_internal_messages, msg_table)
+        msg_table.destroy()
+        
 
     def create_msg_table(self, msg):
         """
@@ -229,8 +242,7 @@ class NetLandGTK(gtk.Window):
         msg_frame = gtk.Frame()
         msg_frame.set_label(
             '%s :: %s | %s' %
-            (msg.nick(), msg.IP(),
-            msg.post_time().ctime()))
+            (msg.nick(), msg.IP(), msg.post_time().ctime()))
         msg_body = gtk.TextView()
         msg_body.set_wrap_mode(gtk.WRAP_WORD)
         msg_body.set_editable(False)
@@ -242,29 +254,20 @@ class NetLandGTK(gtk.Window):
         msg_frame.show()
         msg_table.attach( msg_frame,
             # X direction #          # Y direction
-            0, 2,                      0, 1,
+            1, 2,                      0, 1,
             gtk.EXPAND | gtk.FILL,     0,
             0,                         0)
         
-        if True: 
-            ''' 
-                Вместо тру нужен метод проверки вложений 
-            '''
-            msg_table.button = gtk.Button("+")
+        msg_table.nchilds = len(msg.replies())
+        if msg_table.nchilds:
+            msg_table.button = gtk.Button("+ [%s]"%msg_table.nchilds)
             msg_table.button.connect("clicked", self.get_internal_messages, msg_table)
             msg_table.button.show()
-            msg_table.bar = gtk.ProgressBar()
             msg_table.attach( msg_table.button,
                 # X direction #          # Y direction
-                0, 1,                      1, 2,
-                0,                         0,
+                0, 1,                      0, 1,
+                0,                         gtk.EXPAND | gtk.FILL,
                 0,                         0)
-            msg_table.attach( msg_table.bar,
-                # X direction #          # Y direction
-                1, 2,                      1, 2,
-                gtk.EXPAND | gtk.FILL,     0,
-                20,                        0)
-        msg_table.bar.show()
         msg_table.show()
         return msg_table
     
