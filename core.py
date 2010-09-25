@@ -23,11 +23,14 @@ import threading
 
 import config
 
+from util import logobject
+
 class Connector (threading.Thread):
     """
         The class that handle connection with Netland server.
     """
 
+    @logobject
     def __init__(self, server_address):
         """
             Connects to a given server.
@@ -48,6 +51,7 @@ class Connector (threading.Thread):
             Raise an exception if connector is stopped.
         """
         if not self.stopped:
+            self.log.debug("Sending message '%s'" % msg)
             self.out_queue.put(msg)
         else:
             # FIXME: change exception type
@@ -88,6 +92,7 @@ class Connector (threading.Thread):
             for line in lines:
                 if line == "":
                     continue
+                self.log.debug("Yielding line '%s'" % line)
                 yield line
 
     def run(self):
@@ -111,6 +116,7 @@ class ClientCore(threading.Thread):
         Dispatch data income and outcome data flaws.
     """
 
+    @logobject
     def __init__(self, server_address):
         threading.Thread.__init__(self)
         self._connector = Connector(server_address)

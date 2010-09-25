@@ -22,6 +22,9 @@ import sys
 import threading
 import os
 import traceback
+import argparse
+import logging
+
 from tempfile import mkstemp
 from datetime import timedelta
 from subprocess import call
@@ -47,6 +50,18 @@ def print_message(msg):
     print ""
 
 if __name__ == "__main__":
+    argParser = argparse.ArgumentParser(description="interface to pynlc")
+    argParser.add_argument("-g", help="GUI interface")
+    argParser.add_argument("-d", help="debug", action="store_const",
+                           dest="debug", const=True, default=False)
+    args = argParser.parse_args()
+    if args.debug:
+        logging.basicConfig(filename="log", 
+                            level=logging.DEBUG,
+                            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        logging.debug("pynlc-cli started")
+
+
     core = None
     nick = getuser()
     profiler = hpy()

@@ -17,8 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pynlc.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
+from functools import partial, wraps
 from datetime import date, timedelta
+import logging
 
 import config
 
@@ -78,3 +79,14 @@ def get_channel_name(channel, with_description=False):
     else:
         return channel.name()[1:]
 
+
+def logobject(func):
+    """
+    Decorator adding logging.Logger instance to object as log attribute.
+    """
+    
+    @wraps(func)
+    def wrapper(obj, *args, **kw):
+        obj.log = logging.getLogger(obj.__class__.__name__)
+        return func(obj, *args, **kw)
+    return wrapper

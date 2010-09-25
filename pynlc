@@ -3,8 +3,8 @@ CXXFLAGS=-O2 make encode
 
 case "$1" in
 	-g) 
-		python pynlc-gtk.py ;;
+		python pynlc-gtk.py "$@";;
 	
 	*) 
-		python pynlc-cli.py
+		python pynlc-cli.py "$@"
 esac
