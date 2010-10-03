@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from threading import Condition
 from Queue import Queue
 
-from util import nsplit, get_expiration_day
+from util import nsplit, get_expiration_day, logobject
 from node import *
 import config
 
@@ -76,6 +76,7 @@ class Board:
     """
         Simple board realization.
     """
+    @logobject
     def __init__(self, sender=None, with_iternews=True):
         self._channels = None
         self._channels_sequence = None
@@ -264,6 +265,8 @@ class Board:
         for message_update in messages_update:
             message = Message(message_update)
 
+            self.log.debug("update: got message %s" % message)
+
             if message.time_id() > self._last_time_id:
                 self._last_time_id = message.time_id()
 
@@ -276,6 +279,9 @@ class Board:
                 # editing update (after Dedit or Ddel)
                 old_message = self._messages[message.id()]
                 parent.replace_reply(old_message, message)
+                # moving replies from old message to the new one
+                mesage._replies = old_message._replies
+                old_message._replies = []
             else:
                 # new message
                 parent.add_reply(message)

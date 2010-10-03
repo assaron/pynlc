@@ -19,7 +19,7 @@
 
 from itertools import izip, ifilter
 from datetime import timedelta
-
+from util import logobject
 import config
 
 def get_get_property_from_dict_function(property_name, dict_name="_properties"):
@@ -42,6 +42,7 @@ def Node(properties):
         Generates a class with given properties.
     """
     class _Node:
+        @logobject
         def __init__(self, input_string):
             values = input_string.split('\t')[:-1]
             self._properties = {}
@@ -79,6 +80,9 @@ def Node(properties):
                 Replaces old_message to new_message in replies.
             """
             self._replies[self._replies.index(old_message)] = new_message
+
+        def __str__(self):
+            return str(self._properties)
 
 
     # creating readonly properties like 
