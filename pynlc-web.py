@@ -58,6 +58,14 @@ import config
 smb_link_re = re.compile("\\\\\\\\([^ \\\\/?:]+\\\\)+")
 netland_imgs_re = re.compile(u"\\\\\\\\" + config.SERVER[0] + u"\\\\~Поисковик~\\\\Imgs\\\\$")
 
+unichar_re = re.compile("%u([0-9a-fA-F]{4})")
+
+def unichar_replacer(match_obj):
+    return unichr(int(match_obj.group(1), 16))
+
+def unquote_unicode(s):
+    return unichar_re.sub(unichar_replacer, s)
+
 def replace_smb_link(match_obj):
     s = match_obj.group(0)
     if not netland_imgs_re.match(s):
@@ -112,6 +120,9 @@ def get_html_message(msg):
 </tr>
 </table>""" % {"id" : msg.id()}
     return smb_link_re.sub(replace_smb_link, res)
+
+def do_reply(parent_id, text):
+    board.reply(int(parent_id), text, getuser())
 
 
 def get_html_replies(parent_id):
@@ -173,9 +184,8 @@ def get_html_channel(channel_id):
 class MyRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     server_version = "MyHTTP/0.1"
     just_file = True
-
-    replies_re = re.compile("/replies/(-?\d+)$")
-    channel_re = re.compile("/channels/(\d+)$")
+    replies_re = re.compile("/replies/(-?\d+)")
+    channel_re = re.compile("/channels/(\d+)")
 
     def log_request(self, code):
         pass
@@ -195,26 +205,21 @@ class MyRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Parse the form data posted
 
         form = self.get_field_storage("POST")
+        if urlparse.urlparse(self.path).path != "/reply":
+            self.send_error(404, "File not found")
+            return
         # Begin the response
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write('Client: %s\n' % str(self.client_address))
-        self.wfile.write('Path: %s\n' % self.path)
-        self.wfile.write('Form data:\n')
+        args = {}
+        for k in form.keys():
+            args[k] = unquote_unicode(form.getfirst(k))
 
-        # Echo back information about what was posted in the form
-        for field in form.keys():
-            field_item = form[field]
-            if field_item.filename:
-                # The field contains an uploaded file
-                file_data = field_item.file.read()
-                file_len = len(file_data)
-                del file_data
-                self.wfile.write('\tUploaded %s (%d bytes)\n' % (field, 
-                                                                 file_len))
-            else:
-                # Regular form value
-                self.wfile.write('\t%s=%s\n' % (field, form[field].value))
+        try:
+            do_reply(**args)
+            self.send_response(200)
+            self.end_headers()
+        except:
+            self.send_error(303, "Failed to send response")
+            traceback.print_exc()
         return
 
     def do_GET(self):
